@@ -19,11 +19,15 @@ class NewsRepository {
     required this.apiClient,
   });
 
+
+
   Future<ArticlePage> fetchArticles({
     String? pageUrl,
+    String? searchQuery,
   }) async {
     final response = await apiClient.getArticles(
       pageUrl: pageUrl,
+      searchQuery: searchQuery,
     );
 
     final results = response['results'];
@@ -37,9 +41,10 @@ class NewsRepository {
     final articles = results
         .whereType<Map>()
         .map(
-          (json) => ArticleModel.fromJson(
-        Map<String, dynamic>.from(json),
-      ),
+          (json) =>
+          ArticleModel.fromJson(
+            Map<String, dynamic>.from(json),
+          ),
     )
         .toList();
 

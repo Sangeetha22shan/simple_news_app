@@ -17,6 +17,7 @@ class NewsState extends Equatable {
   final String? errorMessage;
   final bool isLoadingMore;
   final bool isRefreshing;
+  final String searchQuery;
 
   const NewsState({
     this.status = NewsStatus.initial,
@@ -25,6 +26,7 @@ class NewsState extends Equatable {
     this.errorMessage,
     this.isLoadingMore = false,
     this.isRefreshing = false,
+    this.searchQuery = '',
   });
 
   bool get hasMore => nextPageUrl != null;
@@ -38,6 +40,7 @@ class NewsState extends Equatable {
     bool? isRefreshing,
     bool clearError = false,
     bool clearNextPage = false,
+    String? searchQuery,
   }) {
     return NewsState(
       status: status ?? this.status,
@@ -51,6 +54,7 @@ class NewsState extends Equatable {
       isLoadingMore:
       isLoadingMore ?? this.isLoadingMore,
       isRefreshing: isRefreshing ?? this.isRefreshing,
+      searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 
@@ -62,5 +66,6 @@ class NewsState extends Equatable {
     errorMessage,
     isLoadingMore,
     isRefreshing,
+    searchQuery,
   ];
 }

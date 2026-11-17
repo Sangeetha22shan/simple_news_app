@@ -29,21 +29,50 @@ class ApiClient {
     );
   }
 
+  // Future<Map<String, dynamic>> getArticles({
+  //   String? pageUrl,
+  // }) async {
+  //   try {
+  //     final response = await _dio.get(
+  //       pageUrl ?? ApiConstants.articlesEndpoint,
+  //       queryParameters: pageUrl == null
+  //           ? {'limit': ApiConstants.pageSize}
+  //           : null,
+  //       options: Options(
+  //         headers: {
+  //           'Cache-Control': 'no-cache',
+  //           'Pragma': 'no-cache',
+  //         },
+  //       ),
+  //     );
+  //
+  //     if (response.data is! Map) {
+  //       throw const ApiException(
+  //         message: 'Invalid server response',
+  //       );
+  //     }
+  //
+  //     return Map<String, dynamic>.from(response.data);
+  //   } on DioException catch (e) {
+  //     throw _handleDioError(e);
+  //   }
+  // }
+
   Future<Map<String, dynamic>> getArticles({
     String? pageUrl,
+    String? searchQuery,
   }) async {
     try {
       final response = await _dio.get(
         pageUrl ?? ApiConstants.articlesEndpoint,
         queryParameters: pageUrl == null
-            ? {'limit': ApiConstants.pageSize}
+            ? {
+          'limit': ApiConstants.pageSize,
+          if (searchQuery != null &&
+              searchQuery.trim().isNotEmpty)
+            'search': searchQuery.trim(),
+        }
             : null,
-        options: Options(
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
-          },
-        ),
       );
 
       if (response.data is! Map) {
