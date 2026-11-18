@@ -6,6 +6,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/app_loader.dart';
 import '../../../core/widgets/empty_state_view.dart';
+import 'news_detail_screen.dart';
 import '../viewmodels/news_state.dart';
 import '../viewmodels/news_view_model.dart';
 import '../widgets/article_card.dart';
@@ -211,7 +212,17 @@ class _NewsListViewState extends State<NewsListView> {
 
                     final article = state.articles[index];
 
-                    return ArticleCard(article: article);
+                    return ArticleCard(
+                      article: article,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) =>
+                                NewsDetailScreen(article: article),
+                          ),
+                        );
+                      },
+                    );
                   },
                 );
               },
