@@ -1,5 +1,5 @@
 
-import '../../core/network/api_client.dart';
+import '../../../core/network/api_client.dart';
 import '../models/article_model.dart';
 
 class ArticlePage {

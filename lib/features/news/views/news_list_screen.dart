@@ -1,11 +1,13 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:math' as math;
 
-import '../../../core/network/api_client.dart';
-import '../../../data/repositories/news_repository.dart';
-import '../cubit/news_cubit.dart';
-import '../cubit/news_state.dart';
+import '../../../core/constants/app_constants.dart';
+import '../../../core/widgets/app_error_view.dart';
+import '../../../core/widgets/app_loader.dart';
+import '../../../core/widgets/empty_state_view.dart';
+import '../viewmodels/news_state.dart';
+import '../viewmodels/news_view_model.dart';
 import '../widgets/article_card.dart';
 
 class NewsListScreen extends StatelessWidget {
@@ -13,14 +15,7 @@ class NewsListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => NewsCubit(
-        repository: NewsRepository(
-          apiClient: ApiClient(),
-        ),
-      )..fetchNews(),
-      child: const NewsListView(),
-    );
+    return const NewsListView();
   }
 }
 
@@ -39,8 +34,7 @@ class _NewsListViewState extends State<NewsListView> {
   void initState() {
     super.initState();
 
-    _scrollController = ScrollController()
-      ..addListener(_onScroll);
+    _scrollController = ScrollController()..addListener(_onScroll);
     _searchController = TextEditingController();
   }
 
@@ -52,14 +46,8 @@ class _NewsListViewState extends State<NewsListView> {
     if (position.maxScrollExtent <= 0) return;
 
     if (position.pixels >=
-        position.maxScrollExtent - 300) {
-      final cubit = context.read<NewsCubit>();
-
-      if (cubit.state.hasMore &&
-          !cubit.state.isLoadingMore &&
-          !cubit.state.isRefreshing) {
-        cubit.loadMoreNews();
-      }
+        position.maxScrollExtent - AppConstants.loadMoreThreshold) {
+      context.read<NewsViewModel>().loadMoreNews();
     }
   }
 
@@ -76,45 +64,42 @@ class _NewsListViewState extends State<NewsListView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final textScaler = MediaQuery.textScalerOf(context);
+    final titleHeight = math.max(65.0, textScaler.scale(26) + 32);
+    final searchHeight = math.max(65.0, textScaler.scale(16) + 49);
 
+    return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 65,
+        toolbarHeight: titleHeight,
         title: const Text(
-          'Discover',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 26,
-          ),
+          AppConstants.discoverTitle,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 26),
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(65),
+          preferredSize: Size.fromHeight(searchHeight),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: TextField(
               controller: _searchController,
               onChanged: (value) {
-                context.read<NewsCubit>().searchArticles(value);
+                context.read<NewsViewModel>().searchArticles(value);
               },
               decoration: InputDecoration(
-                hintText: 'Search news...',
+                hintText: AppConstants.searchHint,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isEmpty
                     ? null
                     : IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () {
-                    _searchController.clear();
-                    context
-                        .read<NewsCubit>()
-                        .searchArticles('');
-                    setState(() {});
-                  },
-                ),
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          _searchController.clear();
+                          context.read<NewsViewModel>().searchArticles('');
+                          setState(() {});
+                        },
+                      ),
                 filled: true,
                 fillColor: Colors.grey.withValues(alpha: 0.10),
-                contentPadding:
-                const EdgeInsets.symmetric(vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
@@ -125,115 +110,108 @@ class _NewsListViewState extends State<NewsListView> {
         ),
       ),
 
-      body: BlocBuilder<NewsCubit, NewsState>(
+      body: BlocBuilder<NewsViewModel, NewsState>(
         builder: (context, state) {
-          if (state.status == NewsStatus.loading &&
-              state.articles.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+          if (state.status == NewsStatus.loading && state.articles.isEmpty) {
+            return const AppLoader();
           }
 
-          if (state.status == NewsStatus.failure &&
-              state.articles.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    state.errorMessage ??
-                        'Something went wrong',
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<NewsCubit>().fetchNews();
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
+          if (state.status == NewsStatus.failure && state.articles.isEmpty) {
+            return AppErrorView(
+              message: state.errorMessage ?? AppConstants.unknownError,
+              onRetry: () {
+                context.read<NewsViewModel>().fetchNews();
+              },
             );
           }
 
           if (state.articles.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.search_off,
-                    size: 60,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'No articles found',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Try searching with another keyword.',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
+            return const EmptyStateView(
+              icon: Icons.search_off,
+              title: AppConstants.emptyArticlesTitle,
+              message: AppConstants.emptyArticlesMessage,
             );
           }
 
           return RefreshIndicator(
-            onRefresh: () =>
-                context.read<NewsCubit>().refreshNews(),
+            onRefresh: () async {
+              final viewModel = context.read<NewsViewModel>();
+              final messenger = ScaffoldMessenger.of(context);
+              final refreshed = await viewModel.refreshNews();
+
+              if (!mounted) return;
+
+              messenger
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      refreshed
+                          ? AppConstants.refreshSuccessMessage
+                          : viewModel.state.errorMessage ??
+                                AppConstants.refreshFailureMessage,
+                    ),
+                  ),
+                );
+            },
             child: LayoutBuilder(
               builder: (context, constraints) {
+                final textScale = math.max(1.0, textScaler.scale(16) / 16);
                 final isTablet =
-                    constraints.maxWidth >= 600;
+                    constraints.maxWidth >= AppConstants.tabletBreakpoint;
 
-                final columns = isTablet ? 2 : 1;
+                final columns =
+                    isTablet &&
+                        textScale < AppConstants.appBarTextScaleBreakpoint
+                    ? 2
+                    : 1;
+                final baseCardExtent = isTablet
+                    ? AppConstants.tabletArticleExtent
+                    : AppConstants.phoneArticleExtent;
+                final cardExtent =
+                    baseCardExtent +
+                    (textScale - 1) * AppConstants.extraCardHeightPerScale;
 
                 return GridView.builder(
                   controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: state.articles.length +
-                      (state.isLoadingMore ||
-                          (state.errorMessage != null && state.hasMore)
+                  padding: const EdgeInsets.all(
+                    AppConstants.articleGridPadding,
+                  ),
+                  itemCount:
+                      state.articles.length +
+                      ((state.isLoadingMore || state.paginationError != null)
                           ? 1
                           : 0),
-                  gridDelegate:
-                  SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: columns,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    mainAxisExtent: isTablet ? 340 : 290,
+                    mainAxisSpacing: AppConstants.articleGridSpacing,
+                    crossAxisSpacing: AppConstants.articleGridSpacing,
+                    mainAxisExtent: cardExtent,
                   ),
+
                   itemBuilder: (context, index) {
+                    // Pagination footer
                     if (index == state.articles.length) {
+                      // Loading indicator
                       if (state.isLoadingMore) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
+                        return const AppLoader();
                       }
 
-                      return Center(
-                        child: TextButton(
-                          onPressed: () {
-                            context.read<NewsCubit>().loadMoreNews();
+                      // Retry button
+                      if (state.paginationError != null) {
+                        return AppErrorView(
+                          message: state.paginationError!,
+                          compact: true,
+                          onRetry: () {
+                            context.read<NewsViewModel>().retryPagination();
                           },
-                          child: const Text('Loading failed. Retry'),
-                        ),
-                      );
+                        );
+                      }
                     }
 
                     final article = state.articles[index];
 
-                    return ArticleCard(
-                      article: article,
-                    );
+                    return ArticleCard(article: article);
                   },
                 );
               },

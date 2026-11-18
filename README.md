@@ -49,19 +49,17 @@ lib/
 │   ├── constants/
 │   ├── errors/
 │   ├── network/
-│   └── theme/
-│
-├── data/
-│   ├── models/
-│   │   └── article_model.dart
-│   │
-│   └── repositories/
-│       └── news_repository.dart
+│   ├── theme/
+│   └── widgets/
 │
 ├── features/
 │   └── news/
-│       ├── cubit/
-│       │   ├── news_cubit.dart
+│       ├── models/
+│       │   └── article_model.dart
+│       ├── repositories/
+│       │   └── news_repository.dart
+│       ├── viewmodels/
+│       │   ├── news_view_model.dart
 │       │   └── news_state.dart
 │       │
 │       ├── views/
@@ -78,9 +76,9 @@ lib/
 **View**
 - Displays the news articles.
 - Handles user interactions.
-- Updates the UI based on Cubit states.
+- Updates the UI based on ViewModel state.
 
-**ViewModel (Cubit)**
+**ViewModel (`NewsViewModel`, implemented with Cubit)**
 - Manages application state.
 - Handles loading and refresh operations.
 - Controls pagination and error states.
@@ -88,15 +86,23 @@ lib/
 **Repository**
 - Fetches article data.
 - Converts API responses into application models.
-- Provides data to the Cubit.
+- Provides data to the ViewModel.
 
 **Model**
 - Represents news article data.
 - Parses JSON responses into Dart objects.
 
+The app's composition root (`main.dart`) creates the API client, repository, and
+ViewModel and provides the ViewModel to the view. The view does not construct
+data-layer dependencies.
+
 **API Client**
 - Centralizes HTTP requests using Dio.
 - Handles request timeouts and API errors.
+
+Reusable UI components (loader, error view, and empty-state view), app theme,
+and shared UI constants live under `core/`. `ArticleCard` remains under the news
+feature because it renders news-specific model data.
 
 ## API Integration
 

@@ -3,7 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../data/models/article_model.dart';
+import '../models/article_model.dart';
 
 class ArticleCard extends StatelessWidget {
   final ArticleModel article;
@@ -16,7 +16,11 @@ class ArticleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
+    final articleDate = article.publishedAt == null
+       ? 'Date unavailable'
+       : DateFormat('dd MMM yyyy')
+       .format(
+       article.publishedAt!.toLocal());
     return Card(
       clipBehavior: Clip.antiAlias,
       elevation: 2,
@@ -35,9 +39,9 @@ class ArticleCard extends StatelessWidget {
                   : CachedNetworkImage(
                 imageUrl: article.imageUrl!,
                 fit: BoxFit.cover,
-                placeholder: (_, __) =>
+                placeholder: (_, _) =>
                     _imagePlaceholder(),
-                errorWidget: (_, __, ___) =>
+                errorWidget: (_, _, _) =>
                     _imagePlaceholder(),
               ),
             ),
@@ -75,13 +79,7 @@ class ArticleCard extends StatelessWidget {
                       ),
                     ),
                   ),
-
-                  Text(
-                    article.publishedAt == null
-                        ? 'Date unavailable'
-                        : DateFormat('dd MMM yyyy')
-                        .format(
-                        article.publishedAt!.toLocal()),
+                  Text(articleDate,
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
