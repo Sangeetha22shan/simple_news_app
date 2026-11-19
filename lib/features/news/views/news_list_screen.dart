@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:math' as math;
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/app_loader.dart';
 import '../../../core/widgets/empty_state_view.dart';
@@ -30,6 +31,29 @@ class NewsListView extends StatefulWidget {
 class _NewsListViewState extends State<NewsListView> {
   late final ScrollController _scrollController;
   late final TextEditingController _searchController;
+
+  int _getItemCount(NewsState state) {
+    final shouldShowFooter =
+        state.isLoadingMore || state.paginationError != null;
+
+    return state.articles.length + (shouldShowFooter ? 1 : 0);
+  }
+
+  void _showRefreshToast(NewsViewModel viewModel, bool refreshed) {
+    final messenger = ScaffoldMessenger.of(context);
+    final message = refreshed
+        ? AppConstants.refreshSuccessMessage
+        : viewModel.state.errorMessage ?? AppConstants.refreshFailureMessage;
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 2),
+          content: Text(message),
+        ),
+      );
+  }
 
   @override
   void initState() {
@@ -63,6 +87,19 @@ class _NewsListViewState extends State<NewsListView> {
     super.dispose();
   }
 
+  void _openArticleDetails(BuildContext context, int initialIndex) {
+    final viewModel = context.read<NewsViewModel>();
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => BlocProvider.value(
+          value: viewModel,
+          child: NewsDetailScreen(initialIndex: initialIndex),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final textScaler = MediaQuery.textScalerOf(context);
@@ -80,32 +117,14 @@ class _NewsListViewState extends State<NewsListView> {
           preferredSize: Size.fromHeight(searchHeight),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: TextField(
+            child: AppTextField(
               controller: _searchController,
+              hintText: AppConstants.searchHint,
+              prefixIcon: Icons.search,
+              textInputAction: TextInputAction.search,
               onChanged: (value) {
                 context.read<NewsViewModel>().searchArticles(value);
               },
-              decoration: InputDecoration(
-                hintText: AppConstants.searchHint,
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isEmpty
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () {
-                          _searchController.clear();
-                          context.read<NewsViewModel>().searchArticles('');
-                          setState(() {});
-                        },
-                      ),
-                filled: true,
-                fillColor: Colors.grey.withValues(alpha: 0.10),
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-              ),
             ),
           ),
         ),
@@ -137,23 +156,10 @@ class _NewsListViewState extends State<NewsListView> {
           return RefreshIndicator(
             onRefresh: () async {
               final viewModel = context.read<NewsViewModel>();
-              final messenger = ScaffoldMessenger.of(context);
               final refreshed = await viewModel.refreshNews();
 
               if (!mounted) return;
-
-              messenger
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      refreshed
-                          ? AppConstants.refreshSuccessMessage
-                          : viewModel.state.errorMessage ??
-                                AppConstants.refreshFailureMessage,
-                    ),
-                  ),
-                );
+              _showRefreshToast(viewModel, refreshed);
             },
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -184,11 +190,7 @@ class _NewsListViewState extends State<NewsListView> {
                   padding: const EdgeInsets.all(
                     AppConstants.articleGridPadding,
                   ),
-                  itemCount:
-                      state.articles.length +
-                      ((state.isLoadingMore || state.paginationError != null)
-                          ? 1
-                          : 0),
+                  itemCount: _getItemCount(state),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: columns,
                     mainAxisSpacing: AppConstants.articleGridSpacing,
@@ -220,18 +222,7 @@ class _NewsListViewState extends State<NewsListView> {
 
                     return ArticleCard(
                       article: article,
-                      onTap: () {
-                        final viewModel = context.read<NewsViewModel>();
-
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => BlocProvider.value(
-                              value: viewModel,
-                              child: NewsDetailScreen(initialIndex: index),
-                            ),
-                          ),
-                        );
-                      },
+                      onTap: () => _openArticleDetails(context, index),
                     );
                   },
                 );

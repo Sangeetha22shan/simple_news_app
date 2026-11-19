@@ -53,6 +53,31 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     }
   }
 
+  void _clampCurrentIndex(List<ArticleModel> articles) {
+    final safeIndex = _currentIndex.clamp(0, articles.length - 1);
+    if (safeIndex == _currentIndex) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_pageController.hasClients) return;
+
+      final currentArticleCount = context
+          .read<NewsViewModel>()
+          .state
+          .articles
+          .length;
+      if (currentArticleCount == 0) return;
+
+      final currentSafeIndex = _currentIndex.clamp(
+        0,
+        currentArticleCount - 1,
+      );
+      setState(() {
+        _currentIndex = currentSafeIndex;
+      });
+      _pageController.jumpToPage(currentSafeIndex);
+    });
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -65,33 +90,15 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
       appBar: AppBar(title: const Text('Article Details'), centerTitle: true),
       body: SafeArea(
         child: BlocBuilder<NewsViewModel, NewsState>(
-          builder: (context, state) {
-            final articles = state.articles;
+            builder: (context, state) {
+              final articles = state.articles;
 
-            if (articles.isEmpty) {
-              return const Center(child: Text('No articles available'));
-            }
+              if (articles.isEmpty) {
+                return const Center(child: Text('No articles available'));
+              }
 
-            final safeIndex = _currentIndex.clamp(0, articles.length - 1);
-            if (safeIndex != _currentIndex) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (!mounted || !_pageController.hasClients) return;
-                final currentArticleCount = context
-                    .read<NewsViewModel>()
-                    .state
-                    .articles
-                    .length;
-                if (currentArticleCount == 0) return;
-                final currentSafeIndex = _currentIndex.clamp(
-                  0,
-                  currentArticleCount - 1,
-                );
-                setState(() {
-                  _currentIndex = currentSafeIndex;
-                });
-                _pageController.jumpToPage(currentSafeIndex);
-              });
-            }
+              _clampCurrentIndex(articles);
+              final safeIndex = _currentIndex.clamp(0, articles.length - 1);
 
             return Column(
               children: [
