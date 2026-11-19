@@ -11,6 +11,7 @@ class AppConstants {
   static const String refreshFailureMessage = 'Unable to refresh news';
 
   static const int tabletBreakpoint = 600;
+  static const int wideTabletBreakpoint = 1000;
   static const double loadMoreThreshold = 300;
   static const double articleGridPadding = 16;
   static const double articleGridSpacing = 12;

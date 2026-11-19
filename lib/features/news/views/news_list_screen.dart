@@ -160,10 +160,16 @@ class _NewsListViewState extends State<NewsListView> {
                 final textScale = math.max(1.0, textScaler.scale(16) / 16);
                 final isTablet =
                     constraints.maxWidth >= AppConstants.tabletBreakpoint;
+                final isWideTablet =
+                    constraints.maxWidth >=
+                    AppConstants.wideTabletBreakpoint;
 
                 final columns =
-                    isTablet &&
-                        textScale < AppConstants.appBarTextScaleBreakpoint
+                    textScale >= AppConstants.appBarTextScaleBreakpoint
+                    ? 1
+                    : isWideTablet
+                    ? 3
+                    : isTablet
                     ? 2
                     : 1;
                 final baseCardExtent = isTablet
@@ -215,10 +221,14 @@ class _NewsListViewState extends State<NewsListView> {
                     return ArticleCard(
                       article: article,
                       onTap: () {
+                        final viewModel = context.read<NewsViewModel>();
+
                         Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) =>
-                                NewsDetailScreen(article: article),
+                            builder: (_) => BlocProvider.value(
+                              value: viewModel,
+                              child: NewsDetailScreen(initialIndex: index),
+                            ),
                           ),
                         );
                       },
