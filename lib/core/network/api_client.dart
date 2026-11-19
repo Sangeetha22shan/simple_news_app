@@ -30,6 +30,7 @@ class ApiClient {
   }
 
 
+  // Fetches the first/search page or follows the API-provided next-page URL.
   Future<Map<String, dynamic>> getArticles({
     String? pageUrl,
     String? searchQuery,
@@ -59,6 +60,7 @@ class ApiClient {
     }
   }
 
+  // Converts transport errors into messages the app can show to users.
   ApiException _handleDioError(DioException error) {
     switch (error.type) {
       case DioExceptionType.connectionTimeout:

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../constants/app_constants.dart';
-
 class AppErrorView extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
@@ -31,7 +29,7 @@ class AppErrorView extends StatelessWidget {
           Text(message, textAlign: TextAlign.center),
           TextButton(
             onPressed: onRetry,
-            child: const Text(AppConstants.retryLabel),
+            child: const Text('Retry'),
           ),
         ],
       ),

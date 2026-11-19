@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dart:math' as math;
 
-import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/responsive_constants.dart';
+import '../../../core/utils/responsive_layout.dart';
+import '../../../core/widgets/app_snack_bar.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/app_loader.dart';
@@ -32,6 +33,7 @@ class _NewsListViewState extends State<NewsListView> {
   late final ScrollController _scrollController;
   late final TextEditingController _searchController;
 
+  // Adds one grid cell for the pagination loader or retry state when needed.
   int _getItemCount(NewsState state) {
     final shouldShowFooter =
         state.isLoadingMore || state.paginationError != null;
@@ -40,19 +42,11 @@ class _NewsListViewState extends State<NewsListView> {
   }
 
   void _showRefreshToast(NewsViewModel viewModel, bool refreshed) {
-    final messenger = ScaffoldMessenger.of(context);
     final message = refreshed
-        ? AppConstants.refreshSuccessMessage
-        : viewModel.state.errorMessage ?? AppConstants.refreshFailureMessage;
+        ? 'News refreshed successfully'
+        : viewModel.state.errorMessage ?? 'Unable to refresh news';
 
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          duration: const Duration(seconds: 2),
-          content: Text(message),
-        ),
-      );
+    AppSnackBar.show(context, message);
   }
 
   @override
@@ -63,6 +57,7 @@ class _NewsListViewState extends State<NewsListView> {
     _searchController = TextEditingController();
   }
 
+  // Requests another page when the user scrolls near the end of the grid.
   void _onScroll() {
     if (!_scrollController.hasClients) return;
 
@@ -71,7 +66,7 @@ class _NewsListViewState extends State<NewsListView> {
     if (position.maxScrollExtent <= 0) return;
 
     if (position.pixels >=
-        position.maxScrollExtent - AppConstants.loadMoreThreshold) {
+        position.maxScrollExtent - ResponsiveConstants.loadMoreThreshold) {
       context.read<NewsViewModel>().loadMoreNews();
     }
   }
@@ -87,6 +82,7 @@ class _NewsListViewState extends State<NewsListView> {
     super.dispose();
   }
 
+  // Keeps the existing news state available while navigating to the reader.
   void _openArticleDetails(BuildContext context, int initialIndex) {
     final viewModel = context.read<NewsViewModel>();
 
@@ -103,23 +99,23 @@ class _NewsListViewState extends State<NewsListView> {
   @override
   Widget build(BuildContext context) {
     final textScaler = MediaQuery.textScalerOf(context);
-    final titleHeight = math.max(65.0, textScaler.scale(26) + 32);
-    final searchHeight = math.max(65.0, textScaler.scale(16) + 49);
 
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: titleHeight,
+        toolbarHeight: ResponsiveLayout.appBarTitleHeight(textScaler),
         title: const Text(
-          AppConstants.discoverTitle,
+          'Discover',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 26),
         ),
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(searchHeight),
+          preferredSize: Size.fromHeight(
+            ResponsiveLayout.searchFieldHeight(textScaler),
+          ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: AppTextField(
               controller: _searchController,
-              hintText: AppConstants.searchHint,
+              hintText: 'Search news...',
               prefixIcon: Icons.search,
               textInputAction: TextInputAction.search,
               onChanged: (value) {
@@ -138,7 +134,7 @@ class _NewsListViewState extends State<NewsListView> {
 
           if (state.status == NewsStatus.failure && state.articles.isEmpty) {
             return AppErrorView(
-              message: state.errorMessage ?? AppConstants.unknownError,
+              message: state.errorMessage ?? 'Something went wrong',
               onRetry: () {
                 context.read<NewsViewModel>().fetchNews();
               },
@@ -148,8 +144,8 @@ class _NewsListViewState extends State<NewsListView> {
           if (state.articles.isEmpty) {
             return const EmptyStateView(
               icon: Icons.search_off,
-              title: AppConstants.emptyArticlesTitle,
-              message: AppConstants.emptyArticlesMessage,
+              title: 'No articles found',
+              message: 'Try searching with another keyword.',
             );
           }
 
@@ -163,39 +159,22 @@ class _NewsListViewState extends State<NewsListView> {
             },
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final textScale = math.max(1.0, textScaler.scale(16) / 16);
-                final isTablet =
-                    constraints.maxWidth >= AppConstants.tabletBreakpoint;
-                final isWideTablet =
-                    constraints.maxWidth >=
-                    AppConstants.wideTabletBreakpoint;
-
-                final columns =
-                    textScale >= AppConstants.appBarTextScaleBreakpoint
-                    ? 1
-                    : isWideTablet
-                    ? 3
-                    : isTablet
-                    ? 2
-                    : 1;
-                final baseCardExtent = isTablet
-                    ? AppConstants.tabletArticleExtent
-                    : AppConstants.phoneArticleExtent;
-                final cardExtent =
-                    baseCardExtent +
-                    (textScale - 1) * AppConstants.extraCardHeightPerScale;
+                final gridLayout = ResponsiveLayout.newsGrid(
+                  availableWidth: constraints.maxWidth,
+                  textScaler: textScaler,
+                );
 
                 return GridView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.all(
-                    AppConstants.articleGridPadding,
+                    ResponsiveConstants.articleGridPadding,
                   ),
                   itemCount: _getItemCount(state),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: columns,
-                    mainAxisSpacing: AppConstants.articleGridSpacing,
-                    crossAxisSpacing: AppConstants.articleGridSpacing,
-                    mainAxisExtent: cardExtent,
+                    crossAxisCount: gridLayout.columns,
+                    mainAxisSpacing: ResponsiveConstants.articleGridSpacing,
+                    crossAxisSpacing: ResponsiveConstants.articleGridSpacing,
+                    mainAxisExtent: gridLayout.cardExtent,
                   ),
 
                   itemBuilder: (context, index) {

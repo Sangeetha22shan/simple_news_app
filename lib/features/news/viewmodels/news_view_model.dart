@@ -23,6 +23,7 @@ class NewsViewModel extends Cubit<NewsState> {
   // INITIAL NEWS
   // --------------------------------
 
+  // Loads the initial feed and ignores results if a newer request replaces it.
   Future<void> fetchNews() async {
     _cancelDebounce();
 
@@ -71,6 +72,7 @@ class NewsViewModel extends Cubit<NewsState> {
   // SEARCH WITH DEBOUNCE
   // --------------------------------
 
+  // Waits for typing to pause before starting a search request.
   void searchArticles(String query) {
     if (isClosed) return;
 
@@ -87,6 +89,7 @@ class NewsViewModel extends Cubit<NewsState> {
     );
   }
 
+  // Replaces the feed with results for the latest debounced search.
   Future<void> _performSearch(
       String query,
       int requestId,
@@ -138,6 +141,7 @@ class NewsViewModel extends Cubit<NewsState> {
   // PAGINATION
   // --------------------------------
 
+  // Loads the next page, preventing duplicate requests and duplicate articles.
   Future<void> loadMoreNews({bool retry = false}) async {
     // Prevent duplicate requests.
     if (isClosed ||
@@ -216,6 +220,7 @@ class NewsViewModel extends Cubit<NewsState> {
   // RETRY PAGINATION
   // --------------------------------
 
+  // Retries a next-page request after the user selects Retry.
   Future<void> retryPagination() async {
     await loadMoreNews(retry: true);
   }
@@ -224,6 +229,7 @@ class NewsViewModel extends Cubit<NewsState> {
   // PULL TO REFRESH
   // --------------------------------
 
+  // Refreshes the current search/feed and reports whether it succeeded.
   Future<bool> refreshNews() async {
     if (isClosed || state.isRefreshing) return false;
 
@@ -278,6 +284,7 @@ class NewsViewModel extends Cubit<NewsState> {
   // ERROR HANDLING
   // --------------------------------
 
+  // Gives known API/data errors specific messages and a safe generic fallback.
   String _errorMessage(Object error) {
     if (error is ApiException) {
       return error.message;
@@ -300,6 +307,7 @@ class NewsViewModel extends Cubit<NewsState> {
   }
 
   @override
+  // Cancels pending search work and invalidates requests before disposal.
   Future<void> close() {
     _cancelDebounce();
     _requestId++;

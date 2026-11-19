@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'core/constants/app_constants.dart';
 import 'core/network/api_client.dart';
 import 'core/theme/app_theme.dart';
 import 'features/news/repositories/news_repository.dart';
@@ -25,7 +24,7 @@ class SimpleNewsApp extends StatelessWidget {
             ..fetchNews(),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: AppConstants.appName,
+        title: 'Simple News App',
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: ThemeMode.system,

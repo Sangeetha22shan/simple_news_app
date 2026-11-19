@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../../core/widgets/app_snack_bar.dart';
 
 import '../models/article_model.dart';
 import '../viewmodels/news_state.dart';
@@ -47,12 +48,14 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     _loadMoreIfNeeded(index, articleCount);
   }
 
+  // Starts pagination shortly before the reader reaches the final article.
   void _loadMoreIfNeeded(int index, int articleCount) {
     if (index >= articleCount - 2) {
       context.read<NewsViewModel>().loadMoreNews();
     }
   }
 
+  // Keeps the visible page valid if a search or refresh shortens the list.
   void _clampCurrentIndex(List<ArticleModel> articles) {
     final safeIndex = _currentIndex.clamp(0, articles.length - 1);
     if (safeIndex == _currentIndex) return;
@@ -78,6 +81,11 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     });
   }
 
+  String _getArticlePositionText(int safeIndex, int articleCount) {
+    final position = safeIndex + 1;
+    return 'Article $position of $articleCount';
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -99,8 +107,12 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
 
               _clampCurrentIndex(articles);
               final safeIndex = _currentIndex.clamp(0, articles.length - 1);
+              final articlePositionText = _getArticlePositionText(
+                safeIndex,
+                articles.length,
+              );
 
-            return Column(
+              return Column(
               children: [
                 Expanded(
                   child: PageView.builder(
@@ -121,7 +133,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Article ${safeIndex + 1} of ${articles.length}',
+                        articlePositionText,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       if (state.isLoadingMore) ...[
@@ -160,15 +172,14 @@ class _ArticleDetailContent extends StatelessWidget {
 
   const _ArticleDetailContent({required this.article});
 
+  // Validates the article link before opening it outside the app.
   Future<void> _openArticle(BuildContext context) async {
     final uri = Uri.tryParse(article.url);
 
     if (uri == null ||
         (uri.scheme != 'https' && uri.scheme != 'http') ||
         uri.host.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Invalid article URL')));
+      AppSnackBar.show(context, 'Invalid article URL');
       return;
     }
 
@@ -176,15 +187,11 @@ class _ArticleDetailContent extends StatelessWidget {
       final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
 
       if (!opened && context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Unable to open article')));
+        AppSnackBar.show(context, 'Unable to open article');
       }
     } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Something went wrong')));
+        AppSnackBar.show(context, 'Something went wrong');
       }
     }
   }
@@ -192,11 +199,12 @@ class _ArticleDetailContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final publishedDate = article.publishedAt == null
-        ? 'Date unavailable'
-        : DateFormat(
-            'dd MMM yyyy, hh:mm a',
-          ).format(article.publishedAt!.toLocal());
+    final newsSiteInitial = article.newsSite.isNotEmpty
+        ? article.newsSite[0].toUpperCase()
+        : 'N';
+    final articleSummary = article.summary?.isNotEmpty == true
+        ? article.summary!
+        : 'No description available.';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 24),
@@ -224,9 +232,7 @@ class _ArticleDetailContent extends StatelessWidget {
                           radius: 18,
                           backgroundColor: theme.colorScheme.primaryContainer,
                           child: Text(
-                            article.newsSite.isNotEmpty
-                                ? article.newsSite[0].toUpperCase()
-                                : 'N',
+                            newsSiteInitial,
                             style: TextStyle(
                               color: theme.colorScheme.onPrimaryContainer,
                               fontWeight: FontWeight.bold,
@@ -246,7 +252,7 @@ class _ArticleDetailContent extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      publishedDate,
+                      article.getPublishedDateTime(),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -268,9 +274,7 @@ class _ArticleDetailContent extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     SelectableText(
-                      article.summary?.isNotEmpty == true
-                          ? article.summary!
-                          : 'No description available.',
+                      articleSummary,
                       style: theme.textTheme.bodyLarge?.copyWith(height: 1.7),
                     ),
                     const SizedBox(height: 28),

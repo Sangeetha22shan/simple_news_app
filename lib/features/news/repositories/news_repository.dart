@@ -2,16 +2,6 @@
 import '../../../core/network/api_client.dart';
 import '../models/article_model.dart';
 
-class ArticlePage {
-  final List<ArticleModel> articles;
-  final String? nextPageUrl;
-
-  const ArticlePage({
-    required this.articles,
-    required this.nextPageUrl,
-  });
-}
-
 class NewsRepository {
   final ApiClient apiClient;
 
@@ -21,6 +11,7 @@ class NewsRepository {
 
 
 
+  // Validates the API payload and converts its results and next-page link.
   Future<ArticlePage> fetchArticles({
     String? pageUrl,
     String? searchQuery,

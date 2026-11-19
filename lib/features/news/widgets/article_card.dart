@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../models/article_model.dart';
 import 'article_image.dart';
@@ -13,9 +12,6 @@ class ArticleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final articleDate = article.publishedAt == null
-        ? 'Date unavailable'
-        : DateFormat('dd MMM yyyy').format(article.publishedAt!.toLocal());
     return Card(
       clipBehavior: Clip.antiAlias,
       elevation: 2,
@@ -62,7 +58,10 @@ class ArticleCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Text(articleDate, style: theme.textTheme.bodySmall),
+                    Text(
+                      article.getPublishedDate(),
+                      style: theme.textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ),

@@ -1,5 +1,6 @@
 
 import 'package:equatable/equatable.dart';
+import 'package:intl/intl.dart';
 
 class ArticleModel extends Equatable {
   final int id;
@@ -20,6 +21,7 @@ class ArticleModel extends Equatable {
     this.publishedAt,
   });
 
+  // Converts API data into an article, supplying safe values for missing fields.
   factory ArticleModel.fromJson(
       Map<String, dynamic> json,
       ) {
@@ -47,6 +49,22 @@ class ArticleModel extends Equatable {
     );
   }
 
+  // Formats the publication date and time in the device's local timezone.
+  String getPublishedDateTime() {
+    final date = publishedAt;
+    if (date == null) return 'Date unavailable';
+
+    return DateFormat('dd MMM yyyy, hh:mm a').format(date.toLocal());
+  }
+
+  // Formats the publication date for the compact article card.
+  String getPublishedDate() {
+    final date = publishedAt;
+    if (date == null) return 'Date unavailable';
+
+    return DateFormat('dd MMM yyyy').format(date.toLocal());
+  }
+
   static String? _nullableString(dynamic value) {
     if (value == null) return null;
 
@@ -65,4 +83,14 @@ class ArticleModel extends Equatable {
     newsSite,
     publishedAt,
   ];
+}
+
+class ArticlePage {
+  final List<ArticleModel> articles;
+  final String? nextPageUrl;
+
+  const ArticlePage({
+    required this.articles,
+    required this.nextPageUrl,
+  });
 }
