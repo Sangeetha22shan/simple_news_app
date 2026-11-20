@@ -68,6 +68,22 @@ class NewsViewModel extends Cubit<NewsState> {
     }
   }
 
+  // Retries the current feed or search without clearing the active query.
+  Future<void> retryNews() async {
+    if (isClosed) return;
+
+    _cancelDebounce();
+
+    final query = state.searchQuery.trim();
+    if (query.isEmpty) {
+      await fetchNews();
+      return;
+    }
+
+    final requestId = ++_requestId;
+    await _performSearch(query, requestId);
+  }
+
   // --------------------------------
   // SEARCH WITH DEBOUNCE
   // --------------------------------

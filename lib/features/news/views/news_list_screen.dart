@@ -136,7 +136,7 @@ class _NewsListViewState extends State<NewsListView> {
             return AppErrorView(
               message: state.errorMessage ?? 'Something went wrong',
               onRetry: () {
-                context.read<NewsViewModel>().fetchNews();
+                context.read<NewsViewModel>().retryNews();
               },
             );
           }

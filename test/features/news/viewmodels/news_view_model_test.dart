@@ -69,6 +69,40 @@ void main() {
     expect(viewModel.state.errorMessage, 'Server error (HTTP 503).');
   });
 
+  test('retryNews preserves the active search query', () async {
+    var callCount = 0;
+
+    when(
+      () => repository.fetchArticles(
+        pageUrl: any(named: 'pageUrl'),
+        searchQuery: any(named: 'searchQuery'),
+      ),
+    ).thenAnswer((_) async {
+      callCount++;
+      if (callCount == 1) {
+        throw const ApiException(message: 'Server error (HTTP 503).');
+      }
+
+      return const ArticlePage(
+        articles: [],
+        nextPageUrl: null,
+      );
+    });
+
+    viewModel.searchArticles('space');
+    await Future<void>.delayed(const Duration(milliseconds: 550));
+
+    await viewModel.retryNews();
+
+    expect(viewModel.state.searchQuery, 'space');
+    verify(
+      () => repository.fetchArticles(
+        pageUrl: null,
+        searchQuery: 'space',
+      ),
+    ).called(greaterThanOrEqualTo(1));
+  });
+
   test('loadMoreNews adds only articles not already in the feed', () async {
     final first = article(1, 'First story');
     final duplicate = article(1, 'Duplicate story');
