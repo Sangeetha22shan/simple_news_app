@@ -116,8 +116,8 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
               children: [
                 Expanded(
                   // Swipe navigation follows the Gmail-style interaction demonstrated in the assignment's reference video.
-// Left swipe  → Next article.
-// Right swipe → Previous article.
+// Left swipe  → Next article. New article
+// Right swipe → Previous article. Old article
                   child: PageView.builder(
                     controller: _pageController,
                     reverse: false,

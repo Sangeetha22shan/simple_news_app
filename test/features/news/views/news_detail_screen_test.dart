@@ -76,7 +76,7 @@ void main() {
     verify(() => repository.fetchArticleById(2)).called(1);
   });
 
-  testWidgets('swiping left opens the next, older article', (tester) async {
+  testWidgets('swiping left opens the next news article', (tester) async {
     await pumpDetailScreen(tester);
 
     await tester.drag(find.byType(PageView), const Offset(-500, 0));
@@ -86,7 +86,7 @@ void main() {
     expect(find.text('Oldest Article'), findsOneWidget);
   });
 
-  testWidgets('swiping right opens the previous, newer article', (tester) async {
+  testWidgets('swiping right opens the previous news article', (tester) async {
     await pumpDetailScreen(tester);
 
     await tester.drag(find.byType(PageView), const Offset(500, 0));
