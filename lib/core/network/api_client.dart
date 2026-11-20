@@ -1,3 +1,4 @@
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 
@@ -7,28 +8,23 @@ import '../errors/api_exception.dart';
 class ApiClient {
   late final Dio _dio;
 
-  ApiClient() {
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: ApiConstants.baseUrl,
-        connectTimeout: ApiConstants.connectTimeout,
-        receiveTimeout: ApiConstants.receiveTimeout,
-        headers: {
-          'Accept': 'application/json',
-        },
-      ),
-    );
+  ApiClient({Dio? dio}) {
+    _dio =
+        dio ??
+        Dio(
+          BaseOptions(
+            baseUrl: ApiConstants.baseUrl,
+            connectTimeout: ApiConstants.connectTimeout,
+            receiveTimeout: ApiConstants.receiveTimeout,
+            headers: {'Accept': 'application/json'},
+          ),
+        );
 
     // Logging interceptor for development.
     _dio.interceptors.add(
-      LogInterceptor(
-        requestBody: true,
-        responseBody: false,
-        error: true,
-      ),
+      LogInterceptor(requestBody: true, responseBody: false, error: true),
     );
   }
-
 
   // Fetches the first/search page or follows the API-provided next-page URL.
   Future<Map<String, dynamic>> getArticles({
@@ -40,18 +36,15 @@ class ApiClient {
         pageUrl ?? ApiConstants.articlesEndpoint,
         queryParameters: pageUrl == null
             ? {
-          'limit': ApiConstants.pageSize,
-          if (searchQuery != null &&
-              searchQuery.trim().isNotEmpty)
-            'search': searchQuery.trim(),
-        }
+                'limit': ApiConstants.pageSize,
+                if (searchQuery != null && searchQuery.trim().isNotEmpty)
+                  'search': searchQuery.trim(),
+              }
             : null,
       );
 
       if (response.data is! Map) {
-        throw const ApiException(
-          message: 'Invalid server response',
-        );
+        throw const ApiException(message: 'Invalid server response');
       }
 
       return Map<String, dynamic>.from(response.data);
@@ -71,26 +64,33 @@ class ApiClient {
         );
 
       case DioExceptionType.connectionError:
-        return const ApiException(
-          message: 'No internet connection.',
-        );
+        return const ApiException(message: 'No internet connection.');
+
+      case DioExceptionType.unknown:
+        if (error.error is FormatException) {
+          return const ApiException(
+            message: 'Invalid server URL. Please check the base URL.',
+          );
+        }
+        if (error.error is SocketException) {
+          return const ApiException(message: 'No internet connection.');
+        }
+        return const ApiException(message: 'Something went wrong.');
 
       case DioExceptionType.badResponse:
+        final statusCode = error.response?.statusCode;
         return ApiException(
-          message:
-          'Server error. Please try again later.',
-          statusCode: error.response?.statusCode,
+          message: statusCode == null
+              ? 'Server error. Please try again later.'
+              : 'Server error (HTTP $statusCode). Please try again later.',
+          statusCode: statusCode,
         );
 
       case DioExceptionType.cancel:
-        return const ApiException(
-          message: 'Request cancelled.',
-        );
+        return const ApiException(message: 'Request cancelled.');
 
       default:
-        return const ApiException(
-          message: 'Something went wrong.',
-        );
+        return const ApiException(message: 'Something went wrong.');
     }
   }
 }
