@@ -12,15 +12,50 @@ A Flutter app for browsing spaceflight news from the [Spaceflight News API](http
 - Support light and dark themes based on the device setting.
 - Adapt the article grid to screen size and text scaling.
 
-## Swipe Navigation (Gmail-style)
+### Search Implementation
 
-The article detail screen supports horizontal swipe navigation, following the interaction demonstrated in the provided reference video.
-Swipe Left: Navigate to the latest/next news article.
-Swipe Right: Navigate to the previous news article.
-Pagination Support: When approaching the end of the currently loaded articles, the app automatically fetches the next page.
-Seamless Navigation: Users can move between articles without returning to the news list.
-Implementation Note: The swipe direction follows the interaction shown in the reference demo video. This differs from the swipe direction described in the written task requirements. The video interaction was used as the implementation reference.
+The application uses the Spaceflight News API's `title_contains` query parameter to implement article search.
 
+**Implementation details:**
+- Users can enter keywords in the search field.
+- Search requests are debounced to avoid unnecessary API calls.
+- The entered keyword is passed to the API through the `title_contains` parameter.
+- Previous search requests are handled safely to prevent outdated results from replacing newer results.
+- Search results support pagination.
+
+**API limitation / design decision:**
+
+The current implementation uses the API's title-based search parameter. Summary-based matching is not independently implemented in the current version. This is a documented limitation of the search implementation.
+
+### Swipe Navigation – Reference Video Implementation
+
+The article detail screen supports horizontal swipe navigation, following the Gmail-style interaction demonstrated in the reference video provided with the assignment.
+
+**Implemented Behavior:**
+- **Swipe Left:** Navigate to the next (newer) news article.
+- **Swipe Right:** Navigate to the previous (older) news article.
+
+**Clarification Regarding Assignment Requirements:**
+
+The assignment contains two different swipe-navigation descriptions:
+
+1. **Written requirement (Page 2):**
+    - Swipe Left → Previous news article.
+    - Swipe Right → Next news article.
+
+2. **Reference video:**
+    - Swipe Left → Next news article.
+    - Swipe Right → Previous news article.
+
+Since the reference video demonstrates the Gmail-style interaction, I followed the video as the primary interaction reference when implementing this feature.
+
+**Implementation Decision:**
+
+The application intentionally follows the swipe behavior demonstrated in the supplied reference video rather than the opposite direction stated in the written description.
+
+This is an intentional design decision based on the provided visual reference, not a navigation bug or an incomplete implementation.
+
+Both swipe directions are fully functional, including navigation between loaded articles and fetching the next page when the user reaches the end of the available articles.
 ## Demo
 
 Run the app on a device or emulator:
@@ -44,6 +79,10 @@ Tap an article to open its details, swipe between articles, and select **Read Fu
 ## Architecture
 
 The app separates the news UI from API access:
+
+### Why Cubit?
+
+Cubit keeps this app's feed, search, pagination, and refresh state transitions straightforward: the UI calls focused methods such as `fetchNews()` or `loadMoreNews()` directly, without extra event classes and handlers. It also works well with the repository boundary, making asynchronous success and error states easy to test in isolation. `Equatable` gives the states value-based equality.
 
 ```text
 lib/
