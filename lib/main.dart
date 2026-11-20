@@ -14,22 +14,33 @@ void main() {
 }
 
 class SimpleNewsApp extends StatelessWidget {
-  const SimpleNewsApp({super.key});
+  final NewsViewModel? viewModel;
+
+  const SimpleNewsApp({super.key, this.viewModel});
 
   @override
   Widget build(BuildContext context) {
+    final app = MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Simple News App',
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
+      home: const NewsListScreen(),
+    );
+
+    if (viewModel != null) {
+      return BlocProvider.value(
+        value: viewModel!,
+        child: app,
+      );
+    }
+
     return BlocProvider(
       create: (_) =>
           NewsViewModel(repository: NewsRepository(apiClient: ApiClient()))
             ..fetchNews(),
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Simple News App',
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.system,
-        home: const NewsListScreen(),
-      ),
+      child: app,
     );
   }
 }

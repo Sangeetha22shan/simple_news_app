@@ -1,223 +1,87 @@
-# Simple News App – Flutter
+# Simple News App
 
-## Project Overview
-
-Simple News App is a cross-platform Flutter application that fetches and displays the latest space-related news articles using the Spaceflight News API.
-
-The application is designed with a clean and maintainable architecture, reusable UI components, and efficient state management using Flutter Bloc/Cubit.
+A Flutter app for browsing spaceflight news from the [Spaceflight News API](https://api.spaceflightnewsapi.net/v4/docs/). Discover articles in a responsive grid, search the feed, read article details, and open the original story in your browser.
 
 ## Features
 
-- Fetch and display news articles from the Spaceflight News API.
-- Display article images, titles, news sources, and published dates.
-- Pull-to-refresh functionality.
-- Infinite scrolling with pagination.
-- Loading and error states with retry functionality.
-- Handle missing images and nullable API fields.
-- Responsive UI for different screen sizes.
-- Light and dark theme support.
+- Browse paginated spaceflight news articles, including their images, sources, and publication dates.
+- Search articles with a debounced search field.
+- Pull to refresh the feed and load more articles as you scroll.
+- Open an in-app article reader with swipe navigation, then follow the link to the original article.
+- Show loading, empty, retry, and error states.
+- Support light and dark themes based on the device setting.
+- Adapt the article grid to screen size and text scaling.
 
-### Planned Features
+## Built with
 
-- Search articles by title and summary.
-- Article detail screen.
-- Previous and next article swipe navigation.
-- Open original articles in an external browser.
-- Unit tests and widget tests.
-
-## Technologies Used
-
-| Technology | Purpose |
-|---|---|
-| Flutter | Cross-platform application development |
-| Dart | Programming language |
-| Flutter Bloc / Cubit | State management |
-| Dio | REST API integration |
-| Equatable | State and model comparison |
-| Cached Network Image | Image caching |
-| Intl | Date formatting |
-| Flutter Test | Application testing |
+- Flutter and Dart
+- `flutter_bloc` and `equatable` for state management
+- `dio` for API requests and error handling
+- `cached_network_image` for article images
+- `intl` for date formatting
+- `url_launcher` for opening original articles
 
 ## Architecture
 
-The project follows the MVVM architectural pattern.
+The app separates the news UI from API access:
 
 ```text
 lib/
-│
 ├── core/
-│   ├── constants/
-│   ├── errors/
-│   ├── network/
-│   ├── theme/
-│   └── widgets/
-│
+│   ├── constants/       # API and responsive layout constants
+│   ├── errors/          # API error type
+│   ├── network/         # Dio setup and API client
+│   ├── theme/           # Light and dark themes
+│   ├── utils/           # Responsive layout helpers
+│   └── widgets/         # Shared UI components
 ├── features/
 │   └── news/
-│       ├── models/
-│       │   └── article_model.dart
-│       ├── repositories/
-│       │   └── news_repository.dart
-│       ├── viewmodels/
-│       │   ├── news_view_model.dart
-│       │   └── news_state.dart
-│       │
-│       ├── views/
-│       │   └── news_list_screen.dart
-│       │
-│       └── widgets/
-│           └── article_card.dart
-│
-└── main.dart
+│       ├── models/      # Article model and JSON parsing
+│       ├── repositories/# API response-to-model mapping
+│       ├── viewmodels/  # News state and Cubit
+│       ├── views/       # News feed and article reader
+│       └── widgets/     # News-specific UI components
+└── main.dart            # App setup and dependency composition
 ```
 
-### Architecture Responsibilities
+`ApiClient` owns Dio requests and transport error handling. `NewsRepository` validates API response data and maps it to models. `NewsViewModel` manages feed, search, refresh, and pagination state.
 
-**View**
-- Displays the news articles.
-- Handles user interactions.
-- Updates the UI based on ViewModel state.
+## API
 
-**ViewModel (`NewsViewModel`, implemented with Cubit)**
-- Manages application state.
-- Handles loading and refresh operations.
-- Controls pagination and error states.
+The app requests articles from `GET /articles/` on the Spaceflight News API. Initial requests include a page size of 10; search requests include the search query. Pagination follows the `next` URL returned by the API.
 
-**Repository**
-- Fetches article data.
-- Converts API responses into application models.
-- Provides data to the ViewModel.
+## Getting started
 
-**Model**
-- Represents news article data.
-- Parses JSON responses into Dart objects.
+### Requirements
 
-The app's composition root (`main.dart`) creates the API client, repository, and
-ViewModel and provides the ViewModel to the view. The view does not construct
-data-layer dependencies.
+- Flutter SDK (Dart SDK is included with Flutter)
+- An Android or iOS device/emulator, or a supported desktop/web target
 
-**API Client**
-- Centralizes HTTP requests using Dio.
-- Handles request timeouts and API errors.
-
-Reusable UI components (loader, error view, and empty-state view), app theme,
-and shared UI constants live under `core/`. `ArticleCard` remains under the news
-feature because it renders news-specific model data.
-
-## API Integration
-
-API Provider: Spaceflight News API
-
-Base URL:
-
-https://api.spaceflightnewsapi.net/v4/
-
-### Endpoints
-
-**Get Articles**
-
-GET /articles/
-
-**Search Articles**
-
-GET /articles/?title_contains=cricket
-
-**Get Article Details**
-
-GET /articles/{id}
-
-API Documentation:
-
-https://api.spaceflightnewsapi.net/v4/docs/
-
-## State Management
-
-This application uses Flutter Bloc/Cubit for state management.
-
-Cubit provides a simple way to manage application states without requiring events.
-
-The application uses the following states:
-
-- Initial
-- Loading
-- Success
-- Failure
-
-Additional flags manage pagination and refresh operations.
-
-## Installation and Setup
-
-### Prerequisites
-
-- Flutter SDK
-- Dart SDK
-- Android Studio or Visual Studio Code
-- Android Emulator or physical Android device
-
-### Clone the Repository
+### Run
 
 ```bash
-git clone YOUR_GITHUB_REPOSITORY_URL
-```
-
-### Navigate to the Project
-
-```bash
+git clone <repository-url>
 cd simple_news_app
-```
-
-### Install Dependencies
-
-```bash
 flutter pub get
-```
-
-### Run the Application
-
-```bash
 flutter run
 ```
 
-### Check Code Quality
+### Analyze and test
 
 ```bash
 flutter analyze
-```
-
-### Run Tests
-
-```bash
 flutter test
 ```
 
-## Error Handling
+## Error behavior
 
-The application handles:
+Request timeouts, connection failures, server HTTP responses, and malformed data are handled separately and surfaced through the app's error or retry UI. A connection failure means the app could not reach the API; it does not necessarily mean the device has no internet access.
+Repository
 
-- API connection failures.
-- Request timeouts.
-- Server errors.
-- Missing article images.
-- Missing or nullable API fields.
-- Pagination errors.
-- Empty article responses.
+GitHub: https://github.com/Sangeetha22shan/simple_news_app
 
-## Assumptions
+Author
 
-- News articles are retrieved from the Spaceflight News API.
-- The news site field is used as the source name.
-- Missing images are replaced with a placeholder.
-- Article data is parsed using null-safe Dart models.
-- Pagination uses the API-provided next-page URL.
-
-## Author
+Sangeetha S
 
 Flutter Developer
-
-## License
-
-This project was developed as a Flutter developer technical assessment.
-
-#   s i m p l e _ n e w s _ a p p 
- 
- 
