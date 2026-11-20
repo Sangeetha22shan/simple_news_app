@@ -1,5 +1,5 @@
 name: simple_news_app
-description: "A new Flutter project."
+description: "A Flutter app for browsing, searching, and reading spaceflight news."
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
@@ -39,4 +39,3 @@ flutter:
 
 
   uses-material-design: true
-

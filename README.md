@@ -2,7 +2,7 @@
 
 A Flutter app for browsing spaceflight news from the [Spaceflight News API](https://api.spaceflightnewsapi.net/v4/docs/). Discover articles in a responsive grid, search the feed, read article details, and open the original story in your browser.
 
-## Features
+## Implemented features
 
 - Browse paginated spaceflight news articles, including their images, sources, and publication dates.
 - Search articles with a debounced search field.
@@ -11,6 +11,26 @@ A Flutter app for browsing spaceflight news from the [Spaceflight News API](http
 - Show loading, empty, retry, and error states.
 - Support light and dark themes based on the device setting.
 - Adapt the article grid to screen size and text scaling.
+
+## Swipe Navigation (Gmail-style)
+
+The article detail screen supports horizontal swipe navigation, following the interaction demonstrated in the provided reference video.
+Swipe Left: Navigate to the latest/next news article.
+Swipe Right: Navigate to the previous news article.
+Pagination Support: When approaching the end of the currently loaded articles, the app automatically fetches the next page.
+Seamless Navigation: Users can move between articles without returning to the news list.
+Implementation Note: The swipe direction follows the interaction shown in the reference demo video. This differs from the swipe direction described in the written task requirements. The video interaction was used as the implementation reference.
+
+## Demo
+
+Run the app on a device or emulator:
+
+```bash
+flutter run
+```
+
+On the **Discover** screen, browse the latest articles, enter a title keyword such as `cricket` in the search field, pull down to refresh, or scroll to load another page. 
+Tap an article to open its details, swipe between articles, and select **Read Full Article** to open the publisher's page.
 
 ## Built with
 
@@ -48,7 +68,7 @@ lib/
 
 ## API
 
-The app requests articles from `GET /articles/` on the Spaceflight News API. Initial requests include a page size of 10; search requests include the search query. Pagination follows the `next` URL returned by the API.
+The app requests articles from `GET /articles/` on the Spaceflight News API. Initial requests include a page size of 10; search requests use the `title_contains` parameter to match article titles. Pagination follows the `next` URL returned by the API.
 
 ## Getting started
 
@@ -60,27 +80,32 @@ The app requests articles from `GET /articles/` on the Spaceflight News API. Ini
 ### Run
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Sangeetha22shan/simple_news_app.git
 cd simple_news_app
 flutter pub get
 flutter run
 ```
 
-### Analyze and test
+## Tests
+
+Run the full automated test suite and static analysis:
 
 ```bash
-flutter analyze
 flutter test
+flutter analyze
 ```
+
+The tests cover API query construction and transport errors, repository response parsing/search/pagination, ViewModel state transitions (including debounce, stale searches, pagination retries, refresh, duplicate filtering, and disposal), and news-list rendering and retry behavior.
 
 ## Error behavior
 
 Request timeouts, connection failures, server HTTP responses, and malformed data are handled separately and surfaced through the app's error or retry UI. A connection failure means the app could not reach the API; it does not necessarily mean the device has no internet access.
-Repository
+
+## Repository
 
 GitHub: https://github.com/Sangeetha22shan/simple_news_app
 
-Author
+## Author
 
 Sangeetha S
 

@@ -6,6 +6,32 @@ import 'package:simple_news_app/core/errors/api_exception.dart';
 import 'package:simple_news_app/core/network/api_client.dart';
 
 void main() {
+  test('searches article titles with title_contains', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.com'));
+    RequestOptions? request;
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          request = options;
+          handler.resolve(
+            Response(
+              requestOptions: options,
+              data: {'results': [], 'next': null},
+            ),
+          );
+        },
+      ),
+    );
+
+    final apiClient = ApiClient(dio: dio);
+    await apiClient.getArticles(searchQuery: '  cricket  ');
+
+    expect(request?.queryParameters, {
+      'limit': 10,
+      'title_contains': 'cricket',
+    });
+  });
+
   Dio dioWithError(DioException Function(RequestOptions) createError) {
     final dio = Dio(BaseOptions(baseUrl: 'https://example.com'));
     dio.interceptors.add(

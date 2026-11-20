@@ -123,7 +123,11 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                       _onPageChanged(index, articles.length);
                     },
                     itemBuilder: (context, index) {
-                      return _ArticleDetailContent(article: articles[index]);
+                      return _ArticleDetailContent(
+                        key: ValueKey(articles[index].id),
+                        articleId: articles[index].id,
+                        fallbackArticle: articles[index],
+                      );
                     },
                   ),
                 ),
@@ -167,13 +171,48 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   }
 }
 
-class _ArticleDetailContent extends StatelessWidget {
-  final ArticleModel article;
+class _ArticleDetailContent extends StatefulWidget {
+  final int articleId;
+  final ArticleModel fallbackArticle;
 
-  const _ArticleDetailContent({required this.article});
+  const _ArticleDetailContent({
+    super.key,
+    required this.articleId,
+    required this.fallbackArticle,
+  });
+
+  @override
+  State<_ArticleDetailContent> createState() =>
+      _ArticleDetailContentState();
+}
+
+class _ArticleDetailContentState extends State<_ArticleDetailContent> {
+  late Future<ArticleModel> _articleFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadArticle();
+  }
+
+  @override
+  void didUpdateWidget(_ArticleDetailContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.articleId != widget.articleId) {
+      _loadArticle();
+    }
+  }
+
+  void _loadArticle() {
+    final repository = context.read<NewsViewModel>().repository;
+    _articleFuture = repository.fetchArticleById(widget.articleId);
+  }
 
   // Validates the article link before opening it outside the app.
-  Future<void> _openArticle(BuildContext context) async {
+  Future<void> _openArticle(
+    BuildContext context,
+    ArticleModel article,
+  ) async {
     final uri = Uri.tryParse(article.url);
 
     if (uri == null ||
@@ -198,6 +237,42 @@ class _ArticleDetailContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return FutureBuilder<ArticleModel>(
+      future: _articleFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Unable to load article details.',
+                      textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () => setState(_loadArticle),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return _buildArticle(
+          context,
+          snapshot.data ?? widget.fallbackArticle,
+        );
+      },
+    );
+  }
+
+  Widget _buildArticle(BuildContext context, ArticleModel article) {
     final theme = Theme.of(context);
     final newsSiteInitial = article.newsSite.isNotEmpty
         ? article.newsSite[0].toUpperCase()
@@ -283,7 +358,7 @@ class _ArticleDetailContent extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: article.url.isEmpty
                             ? null
-                            : () => _openArticle(context),
+                            : () => _openArticle(context, article),
                         icon: const Icon(Icons.open_in_new),
                         label: const Text('Read Full Article'),
                         style: ElevatedButton.styleFrom(

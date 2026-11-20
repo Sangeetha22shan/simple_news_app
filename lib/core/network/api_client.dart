@@ -38,9 +38,30 @@ class ApiClient {
             ? {
                 'limit': ApiConstants.pageSize,
                 if (searchQuery != null && searchQuery.trim().isNotEmpty)
-                  'search': searchQuery.trim(),
+                  'title_contains': searchQuery.trim(),
               }
             : null,
+      );
+
+      if (response.data is! Map) {
+        throw const ApiException(message: 'Invalid server response');
+      }
+
+      return Map<String, dynamic>.from(response.data);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  // Fetches one article by its API identifier.
+  Future<Map<String, dynamic>> getArticleById(int id) async {
+    if (id <= 0) {
+      throw const FormatException('Invalid article ID');
+    }
+
+    try {
+      final response = await _dio.get(
+        ApiConstants.articleEndpoint(id),
       );
 
       if (response.data is! Map) {

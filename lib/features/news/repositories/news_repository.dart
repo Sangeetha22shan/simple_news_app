@@ -9,7 +9,15 @@ class NewsRepository {
     required this.apiClient,
   });
 
+  // Fetches the complete article details for an article ID.
+  Future<ArticleModel> fetchArticleById(int id) async {
+    if (id <= 0) {
+      throw const FormatException('Invalid article ID');
+    }
 
+    final response = await apiClient.getArticleById(id);
+    return ArticleModel.fromJson(response);
+  }
 
   // Validates the API payload and converts its results and next-page link.
   Future<ArticlePage> fetchArticles({
